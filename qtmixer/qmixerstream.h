@@ -4,8 +4,8 @@
 #include <QIODevice>
 #include <QAudioFormat>
 
-#include "QtMixer.h"
-#include "QMixerStreamHandle.h"
+#include "qtmixer.h"
+#include "qmixerstreamhandle.h"
 
 typedef std::numeric_limits<qint16> Range;
 

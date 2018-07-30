@@ -3,8 +3,8 @@
 
 #include <QIODevice>
 
-#include "QtMixer.h"
-#include "QMixerStreamHandle.h"
+#include "qtmixer.h"
+#include "qmixerstreamhandle.h"
 
 class QAbstractMixerStream : public QIODevice
 {

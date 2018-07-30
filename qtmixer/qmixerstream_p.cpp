@@ -1,4 +1,4 @@
-#include "QMixerStream_p.h"
+#include "qmixerstream_p.h"
 
 QMixerStreamPrivate::QMixerStreamPrivate(const QAudioFormat &format)
 	: m_format(format)

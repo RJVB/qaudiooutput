@@ -1,7 +1,7 @@
 #ifndef QMIXERSTREAMHANDLE_H
 #define QMIXERSTREAMHANDLE_H
 
-#include "QtMixer.h"
+#include "qtmixer.h"
 
 class QAbstractMixerStream;
 class QAudioDecoderStream;

@@ -1,5 +1,5 @@
-#include "QMixerStreamHandle.h"
-#include "QAbstractMixerStream.h"
+#include "qmixerstreamhandle.h"
+#include "qabstractmixerstream.h"
 
 QMixerStreamHandle::QMixerStreamHandle()
 	: m_stream(nullptr)

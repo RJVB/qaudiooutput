@@ -3,11 +3,11 @@
 #include <QAudioDecoder>
 #include <QBuffer>
 
-#include "QMixerStream.h"
-#include "QAudioDecoderStream.h"
-#include "QMixerStreamHandle.h"
-#include "QAbstractMixerStream.h"
-#include "QMixerStream_p.h"
+#include "qmixerstream.h"
+#include "qaudiodecoderstream.h"
+#include "qmixerstreamhandle.h"
+#include "qabstractmixerstream.h"
+#include "qmixerstream_p.h"
 
 QMixerStream::QMixerStream(const QAudioFormat &format)
 	: d_ptr(new QMixerStreamPrivate(format))

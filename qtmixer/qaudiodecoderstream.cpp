@@ -1,7 +1,7 @@
 #include <QDebug>
 
-#include "QAudioDecoderStream.h"
-#include "QMixerStreamHandle.h"
+#include "qaudiodecoderstream.h"
+#include "qmixerstreamhandle.h"
 
 QAudioDecoderStream::QAudioDecoderStream(const QString &fileName, const QAudioFormat &format)
 	: m_file(fileName)

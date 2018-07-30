@@ -6,22 +6,22 @@ TARGET = $$qtLibraryTarget(QtMixer)
 VER_MAJ = 2
 
 SOURCES += \
-	QAudioDecoderStream.cpp \
-	QMixerStream.cpp \
-	QMixerStreamHandle.cpp \
-	QMixerStream_p.cpp
+	qaudiodecoderstream.cpp \
+	qmixerstream.cpp \
+	qmixerstreamhandle.cpp \
+	qmixerstream_p.cpp
 
 INSTALL_HEADERS += \
-	QMixerStream.h \
-	QMixerStreamHandle.h \
-	QtMixer.h \
-	QMixerStream \
-	QMixerStreamHandle
+	qmixerstream.h \
+	qmixerstreamhandle.h \
+	qtmixer.h \
+	qmixerstream \
+	qmixerstreamhandle
 
 PRIVATE_HEADERS += \
-	QAudioDecoderStream.h \
-	QAbstractMixerStream.h \
-	QMixerStream_p.h
+	qaudiodecoderstream.h \
+	qabstractmixerstream.h \
+	qmixerstream_p.h
 
 HEADERS = \
 	$${INSTALL_HEADERS} \

@@ -6,7 +6,7 @@
 #include <QAudioFormat>
 #include <QFile>
 
-#include "QAbstractMixerStream.h"
+#include "qabstractmixerstream.h"
 
 class QAudioDecoderStream : public QAbstractMixerStream
 {
