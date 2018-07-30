@@ -1,7 +1,7 @@
 #include "qmixerstream_p.h"
 
 QMixerStreamPrivate::QMixerStreamPrivate(const QAudioFormat &format)
-	: m_format(format)
+    : m_format(format)
 {
 
 }

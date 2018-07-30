@@ -9,32 +9,32 @@ class QMixerStream;
 
 class QTMIXER_EXPORT QMixerStreamHandle
 {
-	friend class QMixerStream;
-	friend class QAudioDecoderStream;
+    friend class QMixerStream;
+    friend class QAudioDecoderStream;
 
-	public:
-		QMixerStreamHandle();
+public:
+    QMixerStreamHandle();
 
-		void play();
-		void pause();
-		void stop();
+    void play();
+    void pause();
+    void stop();
 
-		QtMixer::State state() const;
+    QtMixer::State state() const;
 
-		int loops() const;
-		void setLoops(int loops);
+    int loops() const;
+    void setLoops(int loops);
 
-		int position() const;
-		void setPosition(int position);
+    int position() const;
+    void setPosition(int position);
 
-		int length() const;
+    int length() const;
 
-		bool operator ==(const QMixerStreamHandle &other) const;
+    bool operator ==(const QMixerStreamHandle &other) const;
 
-	private:
-		QMixerStreamHandle(QAbstractMixerStream *stream);
+private:
+    QMixerStreamHandle(QAbstractMixerStream *stream);
 
-		QAbstractMixerStream *m_stream;
+    QAbstractMixerStream *m_stream;
 };
 
 #endif // QMIXERSTREAMHANDLE_H

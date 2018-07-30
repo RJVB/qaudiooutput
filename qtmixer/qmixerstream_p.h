@@ -9,14 +9,14 @@ class QAbstractMixerStream;
 
 class QMixerStreamPrivate
 {
-	friend class QMixerStream;
+    friend class QMixerStream;
 
-	public:
-		QMixerStreamPrivate(const QAudioFormat &format);
+public:
+    QMixerStreamPrivate(const QAudioFormat &format);
 
-	private:
-		QList<QAbstractMixerStream *> m_streams;
-		QAudioFormat m_format;
+private:
+    QList<QAbstractMixerStream *> m_streams;
+    QAudioFormat m_format;
 };
 
 #endif // QMIXERSTREAM_P_H
