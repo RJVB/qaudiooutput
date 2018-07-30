@@ -19,15 +19,24 @@ QAudioDecoderStream::QAudioDecoderStream(const QString &fileName, const QAudioFo
         m_output.open(QIODevice::ReadOnly) &&
         m_input.open(QIODevice::WriteOnly);
 
-    Q_ASSERT(valid);
+    if (valid) {
+        m_decoder.setNotifyInterval(10);
+        m_decoder.setAudioFormat(format);
+        m_decoder.setSourceDevice(&m_file);
+        m_decoder.start();
 
-    m_decoder.setNotifyInterval(10);
-    m_decoder.setAudioFormat(format);
-    m_decoder.setSourceDevice(&m_file);
-    m_decoder.start();
-
-    connect(&m_decoder, &QAudioDecoder::bufferReady, this, &QAudioDecoderStream::bufferReady);
-    connect(&m_decoder, &QAudioDecoder::finished, this, &QAudioDecoderStream::finished);
+        if (!m_decoder.error()) {
+            connect(&m_decoder, &QAudioDecoder::bufferReady, this, &QAudioDecoderStream::bufferReady);
+            connect(&m_decoder, &QAudioDecoder::finished, this, &QAudioDecoderStream::finished);
+        } else {
+            qCritical() << "Decoder error" << m_decoder.errorString() << "in QAudioDecoderStream";
+            m_decoder.stop();
+            m_state = QtMixer::Unknown;
+        }
+    } else {
+        m_state = QtMixer::Unknown;
+        qCritical() << "File or buffer initialisation failure in QAudioDecoderStream";
+    }
 }
 
 qint64 QAudioDecoderStream::readData(char *data, qint64 maxlen)
@@ -64,52 +73,79 @@ qint64 QAudioDecoderStream::writeData(const char *data, qint64 len)
 
 void QAudioDecoderStream::rewind()
 {
-    m_output.seek(0);
+    if (m_state != QtMixer::Unknown) {
+        m_output.seek(0);
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+    }
 }
 
 void QAudioDecoderStream::bufferReady()
 {
-    const QAudioBuffer &buffer = m_decoder.read();
+    if (m_state != QtMixer::Unknown) {
+        const QAudioBuffer &buffer = m_decoder.read();
 
-    const int length = buffer.byteCount();
-    const char *data = buffer.data<char>();
+        const int length = buffer.byteCount();
+        const char *data = buffer.data<char>();
 
-    m_input.write(data, length);
+        m_input.write(data, length);
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+    }
+}
+
+void QAudioDecoderStream::error(QAudioDecoder::Error error)
+{
+    qWarning() << Q_FUNC_INFO << m_decoder.errorString();
+    emit decodingError(this, error, m_decoder.errorString());
 }
 
 void QAudioDecoderStream::finished()
 {
+    qWarning() << Q_FUNC_INFO;
     emit decodingFinished(this);
 }
 
 bool QAudioDecoderStream::atEnd() const
 {
-    return m_output.size()
-           && m_output.atEnd();
+    return m_state != QtMixer::Unknown && m_output.size()
+        && m_decoder.state() != QAudioDecoder::DecodingState;
 }
 
 void QAudioDecoderStream::play()
 {
-    m_state = QtMixer::Playing;
+    if (m_state != QtMixer::Unknown) {
+        m_state = QtMixer::Playing;
 
-    emit stateChanged(this, m_state);
+        emit stateChanged(this, m_state);
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+    }
 }
 
 void QAudioDecoderStream::pause()
 {
-    m_state = QtMixer::Paused;
+    if (m_state != QtMixer::Unknown) {
+        m_state = QtMixer::Paused;
 
-    emit stateChanged(this, m_state);
+        emit stateChanged(this, m_state);
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+    }
 }
 
 void QAudioDecoderStream::stop()
 {
-    m_state = QtMixer::Stopped;
-    m_remainingLoops = m_loops;
+    if (m_state != QtMixer::Unknown) {
+        m_state = QtMixer::Stopped;
+        m_remainingLoops = m_loops;
 
-    rewind();
+        rewind();
 
-    emit stateChanged(this, m_state);
+        emit stateChanged(this, m_state);
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+    }
 }
 
 QtMixer::State QAudioDecoderStream::state() const
@@ -130,26 +166,40 @@ void QAudioDecoderStream::setLoops(int loops)
 
 int QAudioDecoderStream::position() const
 {
-    return m_output.pos()
+    if (m_state != QtMixer::Unknown) {
+        return m_output.pos()
            / (m_format.sampleSize() / 8)
            / (m_format.sampleRate() / 1000)
            / (m_format.channelCount());
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+        return -1;
+    }
 }
 
 void QAudioDecoderStream::setPosition(int position)
 {
-    const int target = position
+    if (m_state != QtMixer::Unknown) {
+        const int target = position
                        * (m_format.sampleSize() / 8)
                        * (m_format.sampleRate() / 1000)
                        * (m_format.channelCount());
 
-    m_output.seek(target);
+        m_output.seek(target);
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+    }
 }
 
 int QAudioDecoderStream::length()
 {
-    return m_output.size()
+    if (m_state != QtMixer::Unknown) {
+        return m_output.size()
            / (m_format.sampleSize() / 8)
            / (m_format.sampleRate() / 1000)
            / (m_format.channelCount());
+    } else {
+        qWarning() << Q_FUNC_INFO << "called on invalid stream";
+        return -1;
+    }
 }
