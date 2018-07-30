@@ -1,0 +1,4 @@
+build
+destroot
+*.kdev4
+.kdev4
