@@ -8,7 +8,7 @@
 
 #include "qabstractmixerstream.h"
 
-class QAudioDecoderStream : public QAbstractMixerStream
+class QTMIXER_EXPORT  QAudioDecoderStream : public QAbstractMixerStream
 {
 	public:
 		QAudioDecoderStream(const QString &fileName, const QAudioFormat &format);

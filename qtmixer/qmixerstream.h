@@ -31,7 +31,7 @@ class QTMIXER_EXPORT QMixerStream : public QIODevice
 
 		QMixerStreamPrivate *d_ptr;
 
-	signals:
+	Q_SIGNALS:
 		void stateChanged(QMixerStreamHandle handle, QtMixer::State state);
 		void decodingFinished(QMixerStreamHandle handle);
 };

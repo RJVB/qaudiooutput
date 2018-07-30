@@ -6,7 +6,7 @@
 #include "qtmixer.h"
 #include "qmixerstreamhandle.h"
 
-class QAbstractMixerStream : public QIODevice
+class QTMIXER_EXPORT QAbstractMixerStream : public QIODevice
 {
 	Q_OBJECT
 
@@ -33,7 +33,7 @@ class QAbstractMixerStream : public QIODevice
 			streams.removeAll(this);
 		}
 
-	signals:
+	Q_SIGNALS:
 		void stateChanged(QMixerStreamHandle handle, QtMixer::State state);
 		void decodingFinished(QMixerStreamHandle handle);
 };

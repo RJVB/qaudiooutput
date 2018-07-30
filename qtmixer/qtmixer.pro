@@ -2,6 +2,7 @@ CONFIG += c++11
 QT += multimedia
 TEMPLATE = lib
 DEFINES += QTMIXER_LIBRARY
+DEFINES += BUILD_QTMIXER_WITH_QMAKE
 TARGET = $$qtLibraryTarget(QtMixer)
 VER_MAJ = 2
 
@@ -15,8 +16,8 @@ INSTALL_HEADERS += \
 	qmixerstream.h \
 	qmixerstreamhandle.h \
 	qtmixer.h \
-	qmixerstream \
-	qmixerstreamhandle
+	QMixerStream \
+	QMixerStreamhandle
 
 PRIVATE_HEADERS += \
 	qaudiodecoderstream.h \
