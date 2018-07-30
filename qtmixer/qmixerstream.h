@@ -16,7 +16,7 @@ class QTMIXER_EXPORT QMixerStream : public QIODevice
     Q_OBJECT
 
 public:
-    QMixerStream(const QAudioFormat &format);
+    QMixerStream(const QAudioFormat &format, QObject *parent=nullptr);
 
     QMixerStreamHandle openStream(const QString &fileName);
 

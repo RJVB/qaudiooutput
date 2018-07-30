@@ -9,8 +9,9 @@
 #include "qabstractmixerstream.h"
 #include "qmixerstream_p.h"
 
-QMixerStream::QMixerStream(const QAudioFormat &format)
-    : d_ptr(new QMixerStreamPrivate(format))
+QMixerStream::QMixerStream(const QAudioFormat &format, QObject *parent)
+    : QIODevice(parent)
+    , d_ptr(new QMixerStreamPrivate(format))
 {
     setOpenMode(QIODevice::ReadOnly);
 }
