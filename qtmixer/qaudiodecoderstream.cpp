@@ -27,6 +27,8 @@ QAudioDecoderStream::QAudioDecoderStream(const QString &fileName, const QAudioFo
     m_decoder.start();
 
     connect(&m_decoder, &QAudioDecoder::bufferReady, this, &QAudioDecoderStream::bufferReady);
+    connect(&m_decoder, static_cast<void(QAudioDecoder::*)(QAudioDecoder::Error)>(&QAudioDecoder::error),
+            this, &QAudioDecoderStream::error);
     connect(&m_decoder, &QAudioDecoder::finished, this, &QAudioDecoderStream::finished);
 }
 
@@ -77,6 +79,12 @@ void QAudioDecoderStream::bufferReady()
     m_input.write(data, length);
 }
 
+void QAudioDecoderStream::error(QAudioDecoder::Error error)
+{
+    qWarning() << Q_FUNC_INFO << m_decoder.errorString();
+    emit decodingError(this, error, m_decoder.errorString());
+}
+
 void QAudioDecoderStream::finished()
 {
     emit decodingFinished(this);
@@ -86,6 +94,8 @@ bool QAudioDecoderStream::atEnd() const
 {
     return m_output.size()
            && m_output.atEnd();
+//     return m_state != QtMixer::Unknown && m_output.size()
+//            && m_decoder.state() != QAudioDecoder::DecodingState;
 }
 
 void QAudioDecoderStream::play()

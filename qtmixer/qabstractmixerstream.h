@@ -35,6 +35,7 @@ private:
 
 Q_SIGNALS:
     void stateChanged(QMixerStreamHandle handle, QtMixer::State state);
+    void decodingError(QMixerStreamHandle handle, int error, const QString &errorString);
     void decodingFinished(QMixerStreamHandle handle);
 };
 

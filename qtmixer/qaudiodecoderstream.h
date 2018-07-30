@@ -36,6 +36,7 @@ protected:
 private:
     void rewind();
     void bufferReady();
+    void error(QAudioDecoder::Error error);
     void finished();
 
     QFile m_file;
