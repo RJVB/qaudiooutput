@@ -64,6 +64,9 @@
 #include <QSlider>
 #include <QTimer>
 
+#include <QMixerStream>
+#include <QMixerStreamHandle>
+
 class Generator : public QIODevice
 {
     Q_OBJECT
@@ -106,6 +109,7 @@ private:
     // Owned by layout
     QPushButton *m_modeButton;
     QPushButton *m_suspendResumeButton;
+    QPushButton *m_playFile;
     QComboBox *m_deviceBox;
     QLabel *m_volumeLabel;
     QSlider *m_volumeSlider;
@@ -119,10 +123,16 @@ private:
     bool m_pullMode;
     QByteArray m_buffer;
 
+    QString m_fileName;
+    QMixerStream *m_fileStream;
+    QMixerStreamHandle m_filePlay;
+
 private slots:
     void pushTimerExpired();
     void toggleMode();
     void toggleSuspendResume();
+    void playFile();
+    void qMixerStateChanged(QMixerStreamHandle handle, QtMixer::State state);
     void deviceChanged(int index);
     void volumeChanged(int);
 };

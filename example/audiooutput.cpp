@@ -52,6 +52,7 @@
 #include <QAudioOutput>
 #include <QDebug>
 #include <QVBoxLayout>
+#include <QFileDialog>
 #include <qmath.h>
 #include <qendian.h>
 
@@ -179,6 +180,7 @@ AudioTest::AudioTest()
     ,   m_output(0)
     ,   m_pullMode(true)
     ,   m_buffer(BufferSize, 0)
+    ,   m_fileStream(nullptr)
 {
     initializeWindow();
     initializeAudio();
@@ -208,6 +210,11 @@ void AudioTest::initializeWindow()
     m_suspendResumeButton->setText(tr(SUSPEND_LABEL));
     connect(m_suspendResumeButton, SIGNAL(clicked()), SLOT(toggleSuspendResume()));
     layout->addWidget(m_suspendResumeButton);
+
+    m_playFile = new QPushButton(this);
+    m_playFile->setText(tr("Play File"));
+    connect(m_playFile, SIGNAL(clicked()), SLOT(playFile()));
+    layout->addWidget(m_playFile);
 
     QHBoxLayout *volumeBox = new QHBoxLayout;
     m_volumeLabel = new QLabel;
@@ -272,7 +279,6 @@ void AudioTest::createAudioOutput()
 
 AudioTest::~AudioTest()
 {
-
 }
 
 void AudioTest::deviceChanged(int index)
@@ -349,3 +355,56 @@ void AudioTest::toggleSuspendResume()
     }
 }
 
+void AudioTest::playFile()
+{
+    auto volume = m_volumeSlider->value();
+    if (m_fileName.isEmpty()) {
+        m_fileName = QFileDialog::getOpenFileName(this, tr("Choose Audio File"));
+        const QAudioFormat &audioFormat = m_device.preferredFormat();
+        if (!m_fileName.isEmpty() && (m_fileStream = new QMixerStream(audioFormat))) {
+            m_filePlay = m_fileStream->openStream(m_fileName);
+            if (m_filePlay.isValid()) {
+                m_generator->stop();
+                m_pushTimer->stop();
+                delete m_audioOutput;
+                m_audioOutput = new QAudioOutput(m_device, audioFormat, this);
+                volumeChanged(volume);
+                connect(m_fileStream, &QMixerStream::stateChanged, this, &AudioTest::qMixerStateChanged);
+                m_modeButton->setEnabled(false);
+                qWarning() << "Starting playback of" << m_fileName;
+                m_audioOutput->start(m_fileStream);
+                m_filePlay.play();
+                m_playFile->setText(QFileInfo(m_fileName).fileName());
+            } else {
+                m_fileName.clear();
+            }
+        }
+    } else {
+        m_playFile->setText(tr("Play File"));
+        qWarning() << "Stopping playback of" << m_fileName;
+        // stop file playback, re-enable generator stuff
+        if (!m_filePlay.atEnd()) {
+            m_filePlay.stop();
+        }
+        m_fileStream->closeStream(m_filePlay);
+        delete m_fileStream;
+        m_fileStream = nullptr;
+        m_fileName.clear();
+        m_modeButton->setEnabled(true);
+        createAudioOutput();
+        // simulate a mode toggle to reactivate generator sound output
+        toggleSuspendResume();
+        m_pullMode = !m_pullMode;
+        toggleMode();
+        volumeChanged(volume);
+    }
+}
+
+void AudioTest::qMixerStateChanged(QMixerStreamHandle handle, QtMixer::State state)
+{
+    qWarning() << "QtMixer state changed to" << state << "at position" << handle.position() << "of" <<handle.length() << "atEnd=" << handle.atEnd();
+    if (state == QtMixer::Stopped && handle.atEnd()) {
+        // playback terminated
+        playFile();
+    }
+}
