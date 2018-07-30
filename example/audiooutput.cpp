@@ -64,7 +64,7 @@
 #define VOLUME_LABEL    "Volume:"
 
 const int DurationSeconds = 1;
-const int ToneSampleRateHz = 600;
+const int ToneSampleRateHz = 392;
 const int DataSampleRateHz = 44100;
 const int BufferSize      = 32768;
 
@@ -265,6 +265,9 @@ void AudioTest::createAudioOutput()
                                                 QAudio::LinearVolumeScale,
                                                 QAudio::LogarithmicVolumeScale);
     m_volumeSlider->setValue(qRound(initialVolume * 100));
+
+    m_audioOutput->suspend();
+    m_suspendResumeButton->setText(tr(RESUME_LABEL));
 }
 
 AudioTest::~AudioTest()
@@ -326,7 +329,8 @@ void AudioTest::toggleMode()
         m_audioOutput->start(m_generator);
     }
 
-    m_suspendResumeButton->setText(tr(SUSPEND_LABEL));
+    m_audioOutput->suspend();
+    m_suspendResumeButton->setText(tr(RESUME_LABEL));
 }
 
 void AudioTest::toggleSuspendResume()
