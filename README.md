@@ -1,4 +1,7 @@
-QtMixer
+This is a tiny wrapper around an adapted version of the QtMixer library
+https://github.com/Znurre/QtMixer
+
+QtMixer:
 =======
 
 Summary
