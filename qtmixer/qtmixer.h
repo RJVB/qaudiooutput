@@ -18,7 +18,8 @@ namespace QtMixer
     enum State {
         Playing,
         Paused,
-        Stopped
+        Stopped,
+        Unknown
     };
 }
 

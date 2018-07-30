@@ -26,8 +26,10 @@ public:
 
     int position() const;
     void setPosition(int position);
+    bool atEnd();
 
     int length() const;
+    bool isValid() const;
 
     bool operator ==(const QMixerStreamHandle &other) const;
 

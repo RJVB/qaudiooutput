@@ -20,11 +20,12 @@ QMixerStreamHandle QMixerStream::openStream(const QString &fileName)
 {
     QAudioDecoderStream *stream = new QAudioDecoderStream(fileName, d_ptr->m_format);
     QMixerStreamHandle handle(stream);
+    if (stream) {
+        d_ptr->m_streams << stream;
 
-    d_ptr->m_streams << stream;
-
-    connect(stream, &QAbstractMixerStream::stateChanged, this, &QMixerStream::stateChanged);
-    connect(stream, &QAbstractMixerStream::decodingFinished, this, &QMixerStream::decodingFinished);
+        connect(stream, &QAbstractMixerStream::stateChanged, this, &QMixerStream::stateChanged);
+        connect(stream, &QAbstractMixerStream::decodingFinished, this, &QMixerStream::decodingFinished);
+    }
 
     return handle;
 }

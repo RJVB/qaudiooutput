@@ -15,65 +15,84 @@ QMixerStreamHandle::QMixerStreamHandle(QAbstractMixerStream *stream)
 
 void QMixerStreamHandle::play()
 {
-    Q_ASSERT(m_stream);
-
-    m_stream->play();
+    if (m_stream) {
+        m_stream->play();
+    }
 }
 
 void QMixerStreamHandle::pause()
 {
-    Q_ASSERT(m_stream);
-
-    m_stream->pause();
+    if (m_stream) {
+        m_stream->pause();
+    }
 }
 
 void QMixerStreamHandle::stop()
 {
-    Q_ASSERT(m_stream);
-
-    m_stream->stop();
+    if (m_stream) {
+        m_stream->stop();
+    }
 }
 
 QtMixer::State QMixerStreamHandle::state() const
 {
-    Q_ASSERT(m_stream);
-
-    return m_stream->state();
+    if (m_stream) {
+        return m_stream->state();
+    } else {
+        return QtMixer::Unknown;
+    }
 }
 
 int QMixerStreamHandle::loops() const
 {
-    Q_ASSERT(m_stream);
-
-    return m_stream->loops();
+    if (m_stream) {
+        return m_stream->loops();
+    } else {
+        return -1;
+    }
 }
 
 void QMixerStreamHandle::setLoops(int loops)
 {
-    Q_ASSERT(m_stream);
-
-    m_stream->setLoops(loops);
+    if (m_stream) {
+        m_stream->setLoops(loops);
+    }
 }
 
+// FIXME: always returns 0?!
 int QMixerStreamHandle::position() const
 {
-    Q_ASSERT(m_stream);
-
-    return m_stream->position();
+    if (m_stream) {
+        return m_stream->position();
+    } else {
+        return -1;
+    }
 }
 
 void QMixerStreamHandle::setPosition(int position)
 {
-    Q_ASSERT(m_stream);
+    if (m_stream) {
+        m_stream->setPosition(position);
+    }
+}
 
-    m_stream->setPosition(position);
+bool QMixerStreamHandle::atEnd()
+{
+    return m_stream ? m_stream->atEnd() : false;
 }
 
 int QMixerStreamHandle::length() const
 {
-    Q_ASSERT(m_stream);
+    if (m_stream) {
+        return m_stream->length();
+    } else {
+        return -1;
+    }
+}
 
-    return m_stream->length();
+bool QMixerStreamHandle::isValid() const
+{
+    return m_stream != nullptr;
 }
 
 bool QMixerStreamHandle::operator ==(const QMixerStreamHandle &other) const
