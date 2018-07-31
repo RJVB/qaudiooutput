@@ -50,6 +50,7 @@
 
 #include <QAudioDeviceInfo>
 #include <QAudioOutput>
+#include <QAudioDecoder>
 #include <QDebug>
 #include <QVBoxLayout>
 #include <QFileDialog>
@@ -262,7 +263,7 @@ void AudioTest::initializeAudio()
 
 void AudioTest::createAudioOutput()
 {
-    delete m_audioOutput;
+    m_audioOutput->deleteLater();
     m_audioOutput = 0;
     m_audioOutput = new QAudioOutput(m_device, m_format, this);
     m_generator->start();
@@ -293,11 +294,14 @@ void AudioTest::deviceChanged(int index)
 
 void AudioTest::volumeChanged(int value)
 {
-    if (m_audioOutput) {
+    if (m_volumeSlider->value() != value) {
+        m_volumeSlider->setValue(value);
+    } else if (m_audioOutput) {
         qreal linearVolume =  QAudio::convertVolume(value / qreal(100),
                                                     QAudio::LogarithmicVolumeScale,
                                                     QAudio::LinearVolumeScale);
 
+        qWarning() << "New volume:" << linearVolume;
         m_audioOutput->setVolume(linearVolume);
     }
 }
@@ -360,42 +364,71 @@ void AudioTest::playFile()
     auto volume = m_volumeSlider->value();
     if (m_fileName.isEmpty()) {
         m_fileName = QFileDialog::getOpenFileName(this, tr("Choose Audio File"));
-        const QAudioFormat &audioFormat = m_device.preferredFormat();
-        if (!m_fileName.isEmpty() && (m_fileStream = new QMixerStream(audioFormat))) {
-            m_filePlay = m_fileStream->openStream(m_fileName);
-            if (m_filePlay.isValid()) {
-                m_generator->stop();
-                m_pushTimer->stop();
-                delete m_audioOutput;
-                m_audioOutput = new QAudioOutput(m_device, audioFormat, this);
-                volumeChanged(volume);
-                connect(m_fileStream, &QMixerStream::stateChanged, this, &AudioTest::qMixerStateChanged);
-                m_modeButton->setEnabled(false);
-                qWarning() << "Starting playback of" << m_fileName;
-                m_audioOutput->start(m_fileStream);
-                m_filePlay.play();
-                m_playFile->setText(QFileInfo(m_fileName).fileName());
+        if (!m_fileName.isEmpty()) {
+            QAudioFormat audioFormat = QMixerStream::formatForFile(m_fileName);
+            if (!audioFormat.isValid()) {
+                qWarning() << Q_FUNC_INFO << "couldn't determine content format, using the device's preferred format";
+                audioFormat = m_device.preferredFormat();
+                audioFormat.setSampleSize(16);
+            }
+            auto newAudioOut = new QAudioOutput(m_device, audioFormat, this);
+            // create a new QMixerStream with the new QAudioOutput device as its parent
+            // which means we won't have to delete it ourselves (and risk race conditions
+            // where the output device thinks the stream is still available).
+            if ((m_fileStream = new QMixerStream(audioFormat, newAudioOut))) {
+                m_filePlay = m_fileStream->openStream(m_fileName);
+                if (m_filePlay.isValid()) {
+                    m_generator->stop();
+                    m_pushTimer->stop();
+                    delete m_audioOutput;
+                    m_audioOutput = newAudioOut;
+                    volumeChanged(volume);
+                    connect(m_fileStream, &QMixerStream::stateChanged, this, &AudioTest::qMixerStateChanged);
+                    m_modeButton->setEnabled(false);
+                    qWarning() << "Starting playback of" << m_fileName
+                        << "via stream" << m_fileStream
+                        << audioFormat;
+                    m_audioOutput->start(m_fileStream);
+                    m_filePlay.play();
+                    m_playFile->setText(QFileInfo(m_fileName).fileName());
+                } else {
+                    delete newAudioOut;
+                    newAudioOut = nullptr;
+                }
             } else {
+                delete newAudioOut;
+                newAudioOut = nullptr;
+            }
+            if (!newAudioOut) {
                 m_fileName.clear();
             }
         }
     } else {
+        m_fileName.clear();
         m_playFile->setText(tr("Play File"));
-        qWarning() << "Stopping playback of" << m_fileName;
         // stop file playback, re-enable generator stuff
-        if (!m_filePlay.atEnd()) {
+        if (m_filePlay.state() != QtMixer::Stopped) {
+            qWarning() << "Stopping playback of" << m_fileName;
             m_filePlay.stop();
         }
+        qWarning() << "Stopping" << m_audioOutput;
+        m_audioOutput->stop();
+        m_audioOutput->reset();
+        qWarning() << "Closing stream";
         m_fileStream->closeStream(m_filePlay);
-        delete m_fileStream;
+        // m_fileStream could be deleted here via deleteLater but
+        // handing off ownership to m_audioOutput is an even better
+        // solution to prevent the QAudioOutput backend from reading
+        // from a stale QMixerStream instance.
         m_fileStream = nullptr;
-        m_fileName.clear();
+        qWarning() << "Restoring generator output mode";
         m_modeButton->setEnabled(true);
         createAudioOutput();
         // simulate a mode toggle to reactivate generator sound output
         toggleSuspendResume();
         m_pullMode = !m_pullMode;
         toggleMode();
+        qWarning() << "restoring volume to" << volume;
         volumeChanged(volume);
     }
 }
@@ -403,7 +436,7 @@ void AudioTest::playFile()
 void AudioTest::qMixerStateChanged(QMixerStreamHandle handle, QtMixer::State state)
 {
     qWarning() << "QtMixer state changed to" << state << "at position" << handle.position() << "of" <<handle.length() << "atEnd=" << handle.atEnd();
-    if (state == QtMixer::Stopped && handle.atEnd()) {
+    if (state == QtMixer::Stopped && handle.atEnd() && !m_fileName.isEmpty()) {
         // playback terminated
         playFile();
     }

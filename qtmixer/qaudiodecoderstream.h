@@ -14,6 +14,7 @@ public:
     QAudioDecoderStream(const QString &fileName, const QAudioFormat &format);
 
     bool atEnd() const override;
+    bool done() const override;
 
     void play() override;
     void pause() override;
@@ -50,6 +51,7 @@ private:
 
     int m_loops;
     int m_remainingLoops;
+    qint64 m_bufferSize, m_currentLength;
 };
 
 #endif // QAUDIODECODERSTREAM_H

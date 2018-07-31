@@ -17,6 +17,8 @@ public:
     virtual void pause() = 0;
     virtual void stop() = 0;
 
+    virtual bool done() const = 0;
+
     virtual QtMixer::State state() const = 0;
 
     virtual int loops() const = 0;

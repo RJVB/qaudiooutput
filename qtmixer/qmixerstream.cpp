@@ -16,6 +16,21 @@ QMixerStream::QMixerStream(const QAudioFormat &format, QObject *parent)
     setOpenMode(QIODevice::ReadOnly);
 }
 
+QMixerStream::~QMixerStream()
+{
+    qWarning() << Q_FUNC_INFO << this;
+}
+
+QAudioFormat QMixerStream::formatForFile(const QString &fileName)
+{
+    QAudioDecoder dec;
+    dec.setSourceFilename(fileName);
+    dec.start();
+    QAudioFormat format = dec.audioFormat();
+    dec.stop();
+    return format;
+}
+
 QMixerStreamHandle QMixerStream::openStream(const QString &fileName)
 {
     QAudioDecoderStream *stream = new QAudioDecoderStream(fileName, d_ptr->m_format);
@@ -35,6 +50,7 @@ void QMixerStream::closeStream(const QMixerStreamHandle &handle)
     QAbstractMixerStream *stream = handle.m_stream;
 
     if (stream) {
+        stream->stop();
         stream->removeFrom(d_ptr->m_streams);
         stream->deleteLater();
     }
@@ -42,26 +58,37 @@ void QMixerStream::closeStream(const QMixerStreamHandle &handle)
 
 qint64 QMixerStream::readData(char *data, qint64 maxlen)
 {
-    memset(data, 0, maxlen);
-
-    const qint16 depth = sizeof(qint16);
-    const qint16 samples = maxlen / depth;
-
     const QList<QAbstractMixerStream *> streams = d_ptr->m_streams;
+    const int nStreams = streams.size();
 
-    for (QAbstractMixerStream *stream : streams) {
-        qint16 *cursor = (qint16 *)data;
-        qint16 sample;
-
-        for (int i = 0; i < samples; i++, cursor++) {
-            if (stream->read((char *)&sample, depth)) {
-                *cursor = mix(*cursor, sample);
-            }
-        }
-
+    if (nStreams == 1) {
+        // 1 stream only, fast codepath
+        QAbstractMixerStream *stream = streams.at(0);
+        maxlen = stream->readData(data, maxlen);
         if (stream->atEnd()) {
             stream->stop();
         }
+    } else {
+        memset(data, 0, maxlen);
+        const qint16 depth = sizeof(qint16);
+        const qint16 samples = maxlen / depth;
+        qint64 nRead = 0;
+        for (QAbstractMixerStream *stream : streams) {
+            qint16 *cursor = (qint16 *)data;
+            qint16 sample;
+
+            for (int i = 0; i < samples; i++, cursor++) {
+                if (qint64 n = stream->read((char *)&sample, depth)) {
+                    nRead += n;
+                    *cursor = mix(*cursor, sample);
+                }
+            }
+
+            if (stream->atEnd()) {
+                stream->stop();
+            }
+        }
+        maxlen = nRead / nStreams;
     }
 
     return maxlen;

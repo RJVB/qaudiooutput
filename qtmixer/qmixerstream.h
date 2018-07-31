@@ -17,10 +17,13 @@ class QTMIXER_EXPORT QMixerStream : public QIODevice
 
 public:
     QMixerStream(const QAudioFormat &format, QObject *parent=nullptr);
+    ~QMixerStream();
 
     QMixerStreamHandle openStream(const QString &fileName);
 
     void closeStream(const QMixerStreamHandle &handle);
+
+    static QAudioFormat formatForFile(const QString &fileName);
 
 protected:
     qint64 readData(char *data, qint64 maxlen) override;

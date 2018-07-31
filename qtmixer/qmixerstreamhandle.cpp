@@ -78,7 +78,7 @@ void QMixerStreamHandle::setPosition(int position)
 
 bool QMixerStreamHandle::atEnd()
 {
-    return m_stream ? m_stream->atEnd() : false;
+    return m_stream ? m_stream->done() : false;
 }
 
 int QMixerStreamHandle::length() const
