@@ -23,6 +23,7 @@ public:
 
     void closeStream(const QMixerStreamHandle &handle);
 
+    // doesn't seem to work/possible?
     static QAudioFormat formatForFile(const QString &fileName);
 
 protected:

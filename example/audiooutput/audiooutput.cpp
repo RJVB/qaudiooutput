@@ -54,6 +54,9 @@
 #include <QDebug>
 #include <QVBoxLayout>
 #include <QFileDialog>
+#include <QEventLoop>
+#include <QTimer>
+#include <QElapsedTimer>
 #include <qmath.h>
 #include <qendian.h>
 
@@ -70,6 +73,25 @@ const int ToneSampleRateHz = 392;
 const int DataSampleRateHz = 44100;
 const int BufferSize      = 32768;
 
+class QSlumber
+{
+public:
+    QSlumber(qreal seconds)
+    {
+        if (seconds > 0) {
+            QEventLoop loop;
+            QTimer::singleShot(seconds * 1000, &loop, SLOT(quit()));
+            loop.exec();
+        }
+    }
+    static qreal during(qreal seconds)
+    {
+        QElapsedTimer duration;
+        duration.start();
+        QSlumber sleep(seconds);
+        return duration.elapsed() / 1000.0;
+    }
+};
 
 Generator::Generator(const QAudioFormat &format,
                      qint64 durationUs,
@@ -242,7 +264,7 @@ void AudioTest::initializeAudio()
     connect(m_pushTimer, SIGNAL(timeout()), SLOT(pushTimerExpired()));
 
     m_format.setSampleRate(DataSampleRateHz);
-    m_format.setChannelCount(1);
+    m_format.setChannelCount(2);
     m_format.setSampleSize(16);
     m_format.setCodec("audio/pcm");
     m_format.setByteOrder(QAudioFormat::LittleEndian);
@@ -284,12 +306,16 @@ AudioTest::~AudioTest()
 
 void AudioTest::deviceChanged(int index)
 {
+    const auto currentState = m_audioOutput->state();
     m_pushTimer->stop();
     m_generator->stop();
     m_audioOutput->stop();
     m_audioOutput->disconnect(this);
     m_device = m_deviceBox->itemData(index).value<QAudioDeviceInfo>();
     initializeAudio();
+    if (currentState == QAudio::ActiveState && m_fileName.isEmpty()) {
+        toggleSuspendResume();
+    }
 }
 
 void AudioTest::volumeChanged(int value)
@@ -365,12 +391,8 @@ void AudioTest::playFile()
     if (m_fileName.isEmpty()) {
         m_fileName = QFileDialog::getOpenFileName(this, tr("Choose Audio File"));
         if (!m_fileName.isEmpty()) {
-            QAudioFormat audioFormat = QMixerStream::formatForFile(m_fileName);
-            if (!audioFormat.isValid()) {
-                qWarning() << Q_FUNC_INFO << "couldn't determine content format, using the device's preferred format";
-                audioFormat = m_device.preferredFormat();
-                audioFormat.setSampleSize(16);
-            }
+            QAudioFormat audioFormat = m_device.preferredFormat();
+            audioFormat.setSampleSize(16);
             auto newAudioOut = new QAudioOutput(m_device, audioFormat, this);
             // create a new QMixerStream with the new QAudioOutput device as its parent
             // which means we won't have to delete it ourselves (and risk race conditions
@@ -388,9 +410,9 @@ void AudioTest::playFile()
                     qWarning() << "Starting playback of" << m_fileName
                         << "via stream" << m_fileStream
                         << audioFormat;
+                    m_playFile->setText(QFileInfo(m_fileName).fileName());
                     m_audioOutput->start(m_fileStream);
                     m_filePlay.play();
-                    m_playFile->setText(QFileInfo(m_fileName).fileName());
                 } else {
                     delete newAudioOut;
                     newAudioOut = nullptr;
@@ -438,6 +460,7 @@ void AudioTest::qMixerStateChanged(QMixerStreamHandle handle, QtMixer::State sta
     qWarning() << "QtMixer state changed to" << state << "at position" << handle.position() << "of" <<handle.length() << "atEnd=" << handle.atEnd();
     if (state == QtMixer::Stopped && handle.atEnd() && !m_fileName.isEmpty()) {
         // playback terminated
+        qWarning() << "Extra" << QSlumber::during(2) << "seconds to allow playback to finish up";
         playFile();
     }
 }
