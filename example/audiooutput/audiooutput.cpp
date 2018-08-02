@@ -402,6 +402,7 @@ void AudioTest::playFile()
             // which means we won't have to delete it ourselves (and risk race conditions
             // where the output device thinks the stream is still available).
             if ((m_fileStream = new QMixerStream(audioFormat, newAudioOut))) {
+                m_fileStream->setAppendable(false);
                 m_filePlay = m_fileStream->openStream(m_fileName);
                 if (m_filePlay.isValid()) {
                     m_fileStream->setObjectName(m_fileName);
@@ -474,7 +475,7 @@ void AudioTest::qMixerStateChanged(QMixerStreamHandle handle, QtMixer::State sta
     qWarning() << "QtMixer state changed to" << state << "at position" << handle.position() << "of" <<handle.length() << "atEnd=" << handle.atEnd();
     if (state == QtMixer::Stopped && handle.atEnd() && !m_fileName.isEmpty()) {
         // playback terminated
-        qWarning() << "Extra" << QSlumber::during(2) << "seconds to allow playback to finish up";
+//         qWarning() << "Extra" << QSlumber::during(2) << "seconds to allow playback to finish up";
         playFile();
     }
 }

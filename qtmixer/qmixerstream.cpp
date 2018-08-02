@@ -38,7 +38,10 @@ bool QMixerStream::isValid()
 
 bool QMixerStream::atEnd() const
 {
-    if (Q_LIKELY(d_ptr->m_streams.size())) {
+    if (m_appendable) {
+        qWarning() << this << "is appendable so never atEnd";
+        return false;
+    } else if (Q_LIKELY(d_ptr->m_streams.size())) {
         for (QAbstractMixerStream *stream : d_ptr->m_streams) {
             if (!stream->atEnd()) {
                 return false;
@@ -47,6 +50,16 @@ bool QMixerStream::atEnd() const
     }
     // return true for an invalid stream
     return true;
+}
+
+bool QMixerStream::isSequential() const
+{
+    return true;
+}
+
+void QMixerStream::setAppendable(bool enabled)
+{
+    m_appendable = enabled;
 }
 
 QMixerStreamHandle QMixerStream::openStream(const QString &fileName)
@@ -74,6 +87,29 @@ void QMixerStream::closeStream(const QMixerStreamHandle &handle)
     }
 }
 
+void QMixerStream::close()
+{
+    const QList<QAbstractMixerStream *> streams = d_ptr->m_streams;
+    for (QAbstractMixerStream *stream : streams) {
+        stream->stop();
+        stream->removeFrom(d_ptr->m_streams);
+        stream->deleteLater();
+    }
+}
+
+qint64 QMixerStream::size() const
+{
+    qint64 size = 0, N = 0;
+    const QList<QAbstractMixerStream *> streams = d_ptr->m_streams;
+    for (QAbstractMixerStream *stream : streams) {
+        if (!stream->atEnd()) {
+            size += stream->length();
+            N += 1;
+        }
+    }
+    return N ? size / N : 0;
+}
+
 qint64 QMixerStream::readData(char *data, qint64 maxlen)
 {
     if (Q_UNLIKELY(!d_ptr->m_streams.size())) {
@@ -89,7 +125,7 @@ qint64 QMixerStream::readData(char *data, qint64 maxlen)
         maxlen = stream->readData(data, maxlen);
         if (stream->atEnd()) {
             stream->stop();
-            d_ptr->m_streams.removeOne(stream);
+            stream->removeFrom(d_ptr->m_streams);
         }
     } else {
         memset(data, 0, maxlen);
@@ -109,7 +145,7 @@ qint64 QMixerStream::readData(char *data, qint64 maxlen)
 
             if (stream->atEnd()) {
                 stream->stop();
-                d_ptr->m_streams.removeOne(stream);
+                stream->removeFrom(d_ptr->m_streams);
             }
         }
         maxlen = nRead / nStreams;

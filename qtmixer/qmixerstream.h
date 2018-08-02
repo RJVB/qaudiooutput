@@ -28,6 +28,13 @@ public:
 
     bool isValid();
     virtual bool atEnd() const override;
+    virtual bool isSequential() const override;
+    virtual void close() override;
+    virtual qint64 size() const override;
+    virtual qint64 bytesAvailable() const override { return size(); }
+
+    bool appendable() const { return m_appendable; }
+    void setAppendable(bool enabled = true);
 
 protected:
     qint64 readData(char *data, qint64 maxlen) override;
@@ -37,6 +44,8 @@ private:
     qint16 mix(qint32 sample1, qint32 sample2);
 
     QMixerStreamPrivate *d_ptr;
+
+    bool m_appendable = false;
 
 Q_SIGNALS:
     void stateChanged(QMixerStreamHandle handle, QtMixer::State state);
