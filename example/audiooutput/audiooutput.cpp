@@ -285,8 +285,9 @@ void AudioTest::initializeAudio()
 
 void AudioTest::createAudioOutput()
 {
-    m_audioOutput->deleteLater();
-    m_audioOutput = 0;
+    if (m_audioOutput) {
+        m_audioOutput->deleteLater();
+    }
     m_audioOutput = new QAudioOutput(m_device, m_format, this);
     m_generator->start();
     m_audioOutput->start(m_generator);
@@ -393,6 +394,9 @@ void AudioTest::playFile()
         if (!m_fileName.isEmpty()) {
             QAudioFormat audioFormat = m_device.preferredFormat();
             audioFormat.setSampleSize(16);
+            if (m_audioOutput) {
+                m_audioOutput->deleteLater();
+            }
             auto newAudioOut = new QAudioOutput(m_device, audioFormat, this);
             // create a new QMixerStream with the new QAudioOutput device as its parent
             // which means we won't have to delete it ourselves (and risk race conditions
@@ -400,6 +404,7 @@ void AudioTest::playFile()
             if ((m_fileStream = new QMixerStream(audioFormat, newAudioOut))) {
                 m_filePlay = m_fileStream->openStream(m_fileName);
                 if (m_filePlay.isValid()) {
+                    m_fileStream->setObjectName(m_fileName);
                     m_generator->stop();
                     m_pushTimer->stop();
                     delete m_audioOutput;
@@ -436,6 +441,15 @@ void AudioTest::playFile()
         qWarning() << "Stopping" << m_audioOutput;
         m_audioOutput->stop();
         m_audioOutput->reset();
+//         if (!m_nullStream) {
+//             m_nullStream = new QMixerStream(m_format, this);
+//             m_nullStream->setObjectName(QStringLiteral("NULL stream"));
+//         }
+//         // starting the audio device on a new ("null") input stream appears to
+//         // be the only reliable way to prevent the underlying output plugin to
+//         // try and read data from the stream after the QAudioOutput instance
+//         // and thus the stream have been
+//         m_audioOutput->start(m_nullStream);
         qWarning() << "Closing stream";
         m_fileStream->closeStream(m_filePlay);
         // m_fileStream could be deleted here via deleteLater but

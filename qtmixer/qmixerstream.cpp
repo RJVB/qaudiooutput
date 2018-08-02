@@ -31,6 +31,24 @@ QAudioFormat QMixerStream::formatForFile(const QString &fileName)
     return format;
 }
 
+bool QMixerStream::isValid()
+{
+    return d_ptr->m_streams.size() != 0;
+}
+
+bool QMixerStream::atEnd() const
+{
+    if (Q_LIKELY(d_ptr->m_streams.size())) {
+        for (QAbstractMixerStream *stream : d_ptr->m_streams) {
+            if (!stream->atEnd()) {
+                return false;
+            }
+        }
+    }
+    // return true for an invalid stream
+    return true;
+}
+
 QMixerStreamHandle QMixerStream::openStream(const QString &fileName)
 {
     QAudioDecoderStream *stream = new QAudioDecoderStream(fileName, d_ptr->m_format);
@@ -58,6 +76,10 @@ void QMixerStream::closeStream(const QMixerStreamHandle &handle)
 
 qint64 QMixerStream::readData(char *data, qint64 maxlen)
 {
+    if (Q_UNLIKELY(!d_ptr->m_streams.size())) {
+        return 0;
+    }
+
     const QList<QAbstractMixerStream *> streams = d_ptr->m_streams;
     const int nStreams = streams.size();
 
@@ -67,6 +89,7 @@ qint64 QMixerStream::readData(char *data, qint64 maxlen)
         maxlen = stream->readData(data, maxlen);
         if (stream->atEnd()) {
             stream->stop();
+            d_ptr->m_streams.removeOne(stream);
         }
     } else {
         memset(data, 0, maxlen);
@@ -86,6 +109,7 @@ qint64 QMixerStream::readData(char *data, qint64 maxlen)
 
             if (stream->atEnd()) {
                 stream->stop();
+                d_ptr->m_streams.removeOne(stream);
             }
         }
         maxlen = nRead / nStreams;
