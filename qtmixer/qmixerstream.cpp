@@ -133,7 +133,7 @@ qint64 QMixerStream::readData(char *data, qint64 maxlen)
         const qint16 samples = maxlen / depth;
         qint64 nRead = 0;
         for (QAbstractMixerStream *stream : streams) {
-            qint16 *cursor = (qint16 *)data;
+            qint16 *cursor = reinterpret_cast<qint16 *>(data);
             qint16 sample;
 
             for (int i = 0; i < samples; i++, cursor++) {

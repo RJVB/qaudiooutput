@@ -125,7 +125,7 @@ private:
 
     QString m_fileName;
     QMixerStream *m_fileStream;
-//     QMixerStream *m_nullStream;
+    QMixerStream *m_nullStream;
     QMixerStreamHandle m_filePlay;
 
 private slots:
