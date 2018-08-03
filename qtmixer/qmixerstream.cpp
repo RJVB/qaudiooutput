@@ -19,6 +19,7 @@ QMixerStream::QMixerStream(const QAudioFormat &format, QObject *parent)
 QMixerStream::~QMixerStream()
 {
     qWarning() << Q_FUNC_INFO << this;
+    close();
 }
 
 QAudioFormat QMixerStream::formatForFile(const QString &fileName)
@@ -71,6 +72,7 @@ QMixerStreamHandle QMixerStream::openStream(const QString &fileName)
 
         connect(stream, &QAbstractMixerStream::stateChanged, this, &QMixerStream::stateChanged);
         connect(stream, &QAbstractMixerStream::decodingFinished, this, &QMixerStream::decodingFinished);
+        connect(stream, &QAbstractMixerStream::readyRead, this, &QMixerStream::readyRead);
     }
 
     return handle;
@@ -89,6 +91,7 @@ void QMixerStream::closeStream(const QMixerStreamHandle &handle)
 
 void QMixerStream::close()
 {
+    emit aboutToClose();
     const QList<QAbstractMixerStream *> streams = d_ptr->m_streams;
     for (QAbstractMixerStream *stream : streams) {
         stream->stop();

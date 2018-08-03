@@ -452,7 +452,7 @@ void AudioTest::playFile()
 //         // and thus the stream have been
 //         m_audioOutput->start(m_nullStream);
         qWarning() << "Closing stream";
-        m_fileStream->closeStream(m_filePlay);
+        m_fileStream->close();
         // m_fileStream could be deleted here via deleteLater but
         // handing off ownership to m_audioOutput is an even better
         // solution to prevent the QAudioOutput backend from reading

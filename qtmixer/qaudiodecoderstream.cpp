@@ -108,6 +108,7 @@ void QAudioDecoderStream::bufferReady()
         }
 
         m_input.write(data, length);
+        emit readyRead();
     }
 }
 
